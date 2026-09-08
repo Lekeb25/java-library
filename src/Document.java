@@ -50,21 +50,21 @@ public abstract class Document implements Borrowable {
         return this.numberOfCopies - borrowedBy.size();
     }
 
-    public abstract void getType();
-
     public boolean hasAllCopiesAvailable() {
         return this.numberOfCopies == this.getAvailableCopies();
     }
 
+    public abstract String getType();
+
     @Override
     public boolean borrow(Reader borrower) {
-        if ( this.isAvaible()) {
-            borrowedBy.add(borrower);
-            return true;
-        }
-        if (this.hasAlreadyborrowed(borrower)) {
+        if (this.hasAlreadyBorrowed(borrower)) {
             System.out.println("Already borrowed");
             return false;
+        }
+        if ( this.isAvailable()) {
+            borrowedBy.add(borrower);
+            return true;
         }
         return false;
     }
@@ -75,11 +75,11 @@ public abstract class Document implements Borrowable {
     }
 
     @Override
-    public boolean isAvaible() {
+    public boolean isAvailable() {
         return this.getAvailableCopies() > 0;
     }
 
-    protected boolean hasAlreadyborrowed(Reader borrower) {
+    protected boolean hasAlreadyBorrowed(Reader borrower) {
         return borrowedBy.contains(borrower);
     }
 

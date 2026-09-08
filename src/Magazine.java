@@ -19,8 +19,8 @@ public class Magazine extends Document {
     }
 
     @Override
-    public void getType() {
-        System.out.println("Magazine");
+    public String getType() {
+        return "Magazine";
     }
 
     public void setIssueNumber(int issueNumber) {
