@@ -20,8 +20,8 @@ public class Book extends Document{
     }
 
     @Override
-    public void getType() {
-        System.out.println("Book");
+    public String getType() {
+        return  "Book";
     }
 
 
