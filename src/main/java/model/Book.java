@@ -10,7 +10,15 @@ public class Book extends Document {
 
     public Book( String title, String author,  int publicationYear, int numberOfCopies) {
        super(title, publicationYear, numberOfCopies);
-        this.author= author;
+        this.author= Validation.requireText(author, "author");
+    }
+
+    public void setAuthor(String author) {
+        this.author = Validation.requireText(author, "author");
+    }
+
+    public String getAuthor() {
+        return this.author;
     }
 
     @Override
@@ -29,14 +37,6 @@ public class Book extends Document {
         return getTitle() + ";" + getAuthor() + ";" + getPublicationYear() + ";" + getNumberOfCopies();
     }
 
-
-    public void setAuthor(String author) {
-        this.author = author;
-    }
-
-    public String getAuthor() {
-        return this.author;
-    }
 
 
     @Override

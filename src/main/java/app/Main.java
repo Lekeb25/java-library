@@ -2,6 +2,7 @@ package app;
 
 import exception.*;
 import library.Library;
+import library.DocumentCriteria;
 import model.Book;
 import model.Document;
 import model.Magazine;
@@ -9,12 +10,11 @@ import model.Reader;
 import persistence.LibraryFileStorage;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
-
-import library.DocumentCriteria;
 import java.util.Comparator;
 import java.util.OptionalInt;
 import java.util.function.Predicate;
@@ -28,35 +28,33 @@ public class Main {
         LibraryFileStorage libraryFileStorage = new LibraryFileStorage(filePath);
         Library myLibrary = new Library();
 
-        try {
-            libraryFileStorage.load(myLibrary);
-        } catch (IOException e) {
-            System.out.println("Error: could not load saved data: " + e.getMessage());
-        }
-
-        boolean libraryIsEmpty = myLibrary.getDocuments().isEmpty() && myLibrary.getReaders().isEmpty();
-
-        if ( libraryIsEmpty ) {
+        if ( Files.exists(filePath) ) {
+            try {
+                libraryFileStorage.load(myLibrary);
+                System.out.println("\n\n### Existing library data loaded successfully. ###\n");
+            } catch (IOException e) {
+                System.out.println( "Error: could not load saved data from " + filePath.getFileName() + ": " + e.getMessage());
+                System.out.println("Fix or delete the file, then restart");
+                return;
+            }
+        } else {
             System.out.println("\n\n### No saved data found. Setting up the library for the first time. ###\n");
             initializeLibrary(myLibrary);
-        } else {
-            System.out.println("\n\n### Existing library data loaded successfully. ###\n");
+            saveLibrary(libraryFileStorage, myLibrary);
         }
+
 
         Scanner scanner = new Scanner(System.in);
 
-        runMenu(myLibrary, scanner);
-
-        scanner.close();
-
-
         try {
-            libraryFileStorage.save(myLibrary);
-            System.out.println("\n\nOK: library data saved.");
-        } catch ( IOException e) {
-            System.out.println("Error: could not save data: " + e.getMessage());
-        }
+            runMenu(libraryFileStorage ,myLibrary, scanner);
+        } finally {
+            scanner.close();
 
+            saveLibrary(libraryFileStorage, myLibrary);
+            System.out.println("\n\nOK: library data saved.");
+
+        }
 
     }
 
@@ -103,9 +101,15 @@ public class Main {
         returnDocument(myLibrary, 3, crimeAndPunishment);
         borrowDocument(myLibrary, 3, crimeAndPunishment);
 
-        /* System.out.println("\n### Magazine details ###");
-        natGeo.showDocumentInfos();*/
 
+    }
+
+    private static void saveLibrary(LibraryFileStorage storageFile, Library myLibrary ) {
+        try {
+            storageFile.save(myLibrary);
+        } catch ( IOException e ) {
+            System.out.println("Error: could not save data: " + e.getMessage());
+        }
     }
 
 
@@ -140,17 +144,6 @@ public class Main {
         String[] headers = {"Title", "Author", "Year", "Copies", "Borrowers"};
         int[] columnWidths = {20, 18, 6, 8, 25};
 
-        /*for (Document document : library.getDocuments()) {
-            if (document instanceof Book book) {
-                rows.add(new String[]{
-                        book.getTitle(),
-                        book.getAuthor(),
-                        String.valueOf(book.getPublicationYear()),
-                        String.valueOf(book.getNumberOfCopies()),
-                        borrowersToString(book)
-                });
-            }
-        }*/
 
         List<String[]> rows = library.getBooks().stream().map( book -> {
             return new String[]{
@@ -209,19 +202,14 @@ public class Main {
                         + " - " + document.getAvailableCopies() + "/" + document.getNumberOfCopies() + " available"));
     }
 
-    // Builds a single "Firstname Lastname, Firstname Lastname" string from a document's borrowers.
+
+    //  Builds a comma-separated list of borrower ids from a document's borrowers.
     private static String borrowersToString(Document document) {
         List<Reader> borrowers = document.getBorrowedBy();
         if (borrowers.isEmpty()) {
             return "-";
         }
 
-        /*for (int i = 0; i < borrowers.size(); i++) {
-            if (i > 0) {
-                result.append(", ");
-            }
-            result.append(borrowers.get(i).getId());
-        }*/
         return borrowers.stream().map( borrower -> String.valueOf(borrower.getId())).collect(Collectors.joining(", "));
     }
 
@@ -265,6 +253,19 @@ public class Main {
         }
     }
 
+    private static int readInt( Scanner scanner, String message) {
+        while( true ) {
+            System.out.print(message);
+            String line = scanner.nextLine();
+
+            try {
+                return Integer.parseInt(line.trim());
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid number, please try again.");
+            }
+        }
+    }
+
     private static void removeDocument(Library library, String title, int year) {
         try {
             Document document = library.findDocumentByTitleAndYear(title, year);
@@ -287,7 +288,7 @@ public class Main {
     private static  void removeReader( Library library, int readerId) {
         try {
             library.removeReader(readerId);
-            System.out.println("OK: " +  readerId + " is successfully removed in a library");
+            System.out.println("OK: reader " +  readerId + " removed from the library");
         } catch ( ReaderNotFoundException e) {
             System.out.println("Error: " + e.getMessage());
         }
@@ -296,14 +297,9 @@ public class Main {
     private static void borrowDocument(Library library, int readerId, Document document) {
         try {
             library.borrowDocument(readerId, document);
-            System.out.println("OK: " + readerId + " borrowed \"" + document.getTitle() + "\".");
-        } catch (ReaderNotFoundException e) {
-            System.out.println("Error: " + e.getMessage());
-        } catch (DocumentNotFoundException e) {
-            System.out.println("Error: " + e.getMessage());
-        } catch (ReaderAlreadyBorrowedDocumentException e) {
-            System.out.println("Error: " + e.getMessage());
-        } catch (NoCopiesAvailableException e) {
+            System.out.println("OK: reader " + readerId + " borrowed \"" + document.getTitle() + "\".");
+        } catch (ReaderNotFoundException | DocumentNotFoundException | ReaderAlreadyBorrowedDocumentException |
+                 NoCopiesAvailableException e) {
             System.out.println("Error: " + e.getMessage());
         }
     }
@@ -311,10 +307,8 @@ public class Main {
     private static void returnDocument(Library library, int readerId, Document document) {
         try {
             library.returnBorrowedDocument(readerId, document);
-            System.out.println("OK: " + readerId + " returned \"" + document.getTitle() + "\".");
-        } catch (ReaderNotFoundException | DocumentNotFoundException e) {
-            System.out.println("Error: " + e.getMessage());
-        } catch (ReaderHasNotBorrowedDocumentException e) {
+            System.out.println("OK: reader " + readerId + " returned \"" + document.getTitle() + "\".");
+        } catch (ReaderNotFoundException | DocumentNotFoundException | ReaderHasNotBorrowedDocumentException e) {
             System.out.println("Error: " + e.getMessage());
         }
     }
@@ -341,9 +335,7 @@ public class Main {
         System.out.println("2. By year");
         System.out.println("3. By author");
         System.out.println("4. Available only");
-        System.out.print("Your choice:  ");
-        int choice = scanner.nextInt();
-        scanner.nextLine();
+        int choice = readInt(scanner, "Your choice:  ");
 
         Predicate<Document> criteria;
         switch (choice) {
@@ -352,9 +344,7 @@ public class Main {
                 criteria = DocumentCriteria.withTitle(scanner.nextLine());
             }
             case 2 -> {
-                System.out.print("Publication year:  ");
-                int year = scanner.nextInt();
-                scanner.nextLine();
+                int year = readInt(scanner, "Publication year:  ");
                 criteria = DocumentCriteria.publishedInYear(year);
             }
             case 3 -> {
@@ -376,9 +366,7 @@ public class Main {
         System.out.println("1. By title");
         System.out.println("2. By year (oldest first)");
         System.out.println("3. By year (newest first)");
-        System.out.print("Your choice:  ");
-        int choice = scanner.nextInt();
-        scanner.nextLine();
+        int choice = readInt(scanner, "Your choice:  ");
 
         List<Document> sorted;
         switch (choice) {
@@ -398,6 +386,13 @@ public class Main {
 
     private static void showStatistics(Library library) {
         System.out.println("Library statistics \n");
+
+        int numberOfDocument = library.countDocuments();
+
+        if (numberOfDocument == 0 ) {
+            System.out.println("No document found.");
+            return;
+        }
         System.out.println("Documents:            " + library.countDocuments());
         System.out.println("Total copies:         " + library.getTotalCopies());
         System.out.println("Available documents:  " + library.countAvailableDocuments());
@@ -409,96 +404,94 @@ public class Main {
         return year.isPresent() ? String.valueOf(year.getAsInt()) : "n/a";
     }
 
-    private static void runMenu(Library library, Scanner scanner) {
+    private static void runMenu(LibraryFileStorage storageFile,  Library library, Scanner scanner) {
         boolean running = true;
         printMenu();
         while ( running ) {
 
-            System.out.print("Your choice: ");
-
-            int choice = scanner.nextInt();
-            scanner.nextLine();
+            int choice = readInt(scanner, "Your choice:  ");
 
             switch ( choice ) {
                 case 1 -> {
                     System.out.println();
                     System.out.println();
                     showLibraryContent(library);
-                }case 2 -> {
+                } case 2 -> {
                     System.out.println("Add a reader \n");
                     System.out.print("First name:  ");
                     String firstName = scanner.nextLine();
                     System.out.print("Last name:  ");
                     String lastName = scanner.nextLine();
-                    System.out.print("Reader id:  ");
-                    int id = scanner.nextInt();
-                    scanner.nextLine();
+                    int id = readInt(scanner, "Reader id:  ");
 
-                    addReader(library, new Reader(firstName, lastName, id));
+                    try {
+                        Reader reader = new Reader(firstName, lastName, id);
+                        addReader(library, reader);
+                    } catch (IllegalArgumentException e) {
+                        System.out.println("Error: " + e.getMessage());
+                    }
 
-                }case 3 -> {
+                    saveLibrary(storageFile, library);
+
+                } case 3 -> {
                     System.out.println("Remove a reader \n");
-                    System.out.print("Give the reader id :  ");
-                    int id = scanner.nextInt();
-                    scanner.nextLine();
+                    int id = readInt(scanner, "Give the reader id :  ");
 
                     removeReader(library, id);
+                    saveLibrary(storageFile, library);
 
-                }case 4 -> {
+                } case 4 -> {
                     System.out.println("Add a document \n");
-                    System.out.print("Enter 1 for a book, or 2 for a magazine:  ");
-                    int bookOrMagazine = scanner.nextInt();
-                    scanner.nextLine();
+                    int bookOrMagazine = readInt(scanner, "Enter 1 for a book, or 2 for a magazine:  ");
 
                     System.out.print("Title:  ");
                     String title= scanner.nextLine();
-                    System.out.print("Publication year:  ");
-                    int year = scanner.nextInt();
-                    scanner.nextLine();
-                    System.out.print("Number of copies:  ");
-                    int numberOfCopies = scanner.nextInt();
-                    scanner.nextLine();
+                    int year = readInt(scanner, "Publication year:  ");
+                    int numberOfCopies = readInt(scanner, "Number of copies:  ");
 
                     if (bookOrMagazine == 1) {
                         System.out.print("Author:  ");
                         String author = scanner.nextLine();
 
-                        Book book = new Book(title,  author, year, numberOfCopies);
-                        addDocument(library, book);
+                        try {
+                            Book book = new Book(title,  author, year, numberOfCopies);
+                            addDocument(library, book);
+                        } catch (IllegalArgumentException e) {
+                            System.out.println("Error: " + e.getMessage());
+                        }
+
                     } else if (bookOrMagazine == 2) {
-                        System.out.print("Issue number:  ");
-                        int issueNumber = scanner.nextInt();
-                        scanner.nextLine();
+                        int issueNumber = readInt(scanner, "Issue number:  ");
                         System.out.print("Publisher:  ");
                         String publisher = scanner.nextLine();
 
-                        Magazine magazine = new Magazine(title, year, numberOfCopies, issueNumber, publisher);
-                        addDocument(library, magazine);
+                        try {
+                            Magazine magazine = new Magazine(title, year, numberOfCopies, issueNumber, publisher);
+                            addDocument(library, magazine);
+                        } catch (IllegalArgumentException e) {
+                            System.out.println("Error: " + e.getMessage());
+                        }
                     } else {
                         System.out.println("Invalid document type.");
                     }
 
+                    saveLibrary(storageFile, library);
 
-                }case 5 -> {
+                } case 5 -> {
                     System.out.println("Remove a document \n");
                     System.out.print("Title:  ");
                     String title = scanner.nextLine();
-                    System.out.print("Publication year:  ");
-                    int publicationYear = scanner.nextInt();
-                    scanner.nextLine();
+                    int publicationYear = readInt(scanner, "Publication year:  ");
 
                     removeDocument(library, title, publicationYear);
+                    saveLibrary(storageFile, library);
 
-                }case 6 -> {
+                } case 6 -> {
                     System.out.println("Borrow a document \n");
-                    System.out.print("reader id:  ");
-                    int id = scanner.nextInt();
-                    scanner.nextLine();
+                    int id = readInt(scanner, "reader id:  ");
                     System.out.print("Title:  ");
                     String title = scanner.nextLine();
-                    System.out.print("Publication year:  ");
-                    int publicationYear = scanner.nextInt();
-                    scanner.nextLine();
+                    int publicationYear = readInt(scanner, "Publication year:  ");
 
                     try {
                         Document document = library.findDocumentByTitleAndYear(title, publicationYear);
@@ -506,17 +499,14 @@ public class Main {
                     } catch ( DocumentNotFoundException e ) {
                         System.out.println("Error: " + e.getMessage());
                     }
+                    saveLibrary(storageFile, library);
 
-                }case 7 -> {
+                } case 7 -> {
                     System.out.println("Return a document \n");
-                    System.out.print("reader id:  ");
-                    int id = scanner.nextInt();
-                    scanner.nextLine();
+                    int id = readInt(scanner, "reader id:  ");
                     System.out.print("Title:  ");
                     String title = scanner.nextLine();
-                    System.out.print("Publication year:  ");
-                    int publicationYear = scanner.nextInt();
-                    scanner.nextLine();
+                    int publicationYear = readInt(scanner, "Publication year:  ");
 
                     try {
                         Document document = library.findDocumentByTitleAndYear(title, publicationYear);
@@ -524,6 +514,7 @@ public class Main {
                     } catch ( DocumentNotFoundException e ) {
                         System.out.println("Error: " + e.getMessage());
                     }
+                    saveLibrary(storageFile, library);
 
                 } case 8 -> searchDocumentsMenu(library, scanner);
 

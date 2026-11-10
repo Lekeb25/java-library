@@ -12,7 +12,6 @@ import java.util.function.Predicate;
 
 public class Library {
     private List<Document> documents = new ArrayList<>();
-    /*private ArrayList<Reader> readers = new ArrayList<>();*/
     private Map<Integer, Reader> readers = new HashMap<>();
 
     public List<Document> getDocuments() {
@@ -69,21 +68,22 @@ public class Library {
     }
 
     public Document findDocumentByTitleAndYear ( String title, int publicationYear) {
-        /*for (Document document : documents) {
+
+        return  findFirstDocument(
+                DocumentCriteria.withTitle(title).and(DocumentCriteria.publishedInYear(publicationYear))
+        ).orElseThrow(() ->
+                new DocumentNotFoundException("The document " + title + " does not exist in the library.")
+        );
+        /*
+         * Before, we used a for loop to iterate over the list until we found the element.
+         * Now we use a Predicate from the DocumentCriteria class to make it easier and more flexible.
+        */
+        
+        /* for (Document document : documents) {
             if ( document.getTitle().equals(title) && document.getPublicationYear() == publicationYear ) {
                 return document;
             }
         }*/
-        /*
-            * Before, we used a for loop to iterate over the list until we found the element.
-            * Now we use a Predicate from the DocumentCriteria class to make it easier and more flexible.
-        */
-        return  findFirstDocument(
-                    DocumentCriteria.withTitle(title).and(DocumentCriteria.publishedInYear(publicationYear))
-        ).orElseThrow(() ->
-                new DocumentNotFoundException("The document " + title + " does not exist in the library.")
-        );
-
     }
 
     public List<Document> getDocumentsSorted() {
@@ -105,30 +105,28 @@ public class Library {
             throw new DocumentCannotBeRemovedException("Cannot remove '" + document.getTitle() + "': all borrowed copies must be returned first.");
         }
         if (! documents.remove(document)) {
-            throw  new DocumentNotFoundException("The document " + document.getTitle() + " does not exist in the library.Library");
+            throw  new DocumentNotFoundException("The document " + document.getTitle() + " does not exist in the library.");
         }
     }
 
     public void removeReader(int readerId) {
         Reader removed = readers.remove(readerId);
         if ( removed == null ) {
-            throw new ReaderNotFoundException("No reader found with id " + readerId);
+            throw new ReaderNotFoundException("No reader found with id " + readerId + " in the library.");
         }
     }
 
     public void borrowDocument( int readerId, Document document ) {
         Reader reader = findReaderById(readerId);
-        if ( ! documents.contains(document) ) {
-            throw  new DocumentNotFoundException("This document " + document.getTitle() + " does not exist in the library.Library");
-        }
+
+        ensureDocumentExists(document);
         document.borrow(reader);
     }
 
     public void returnBorrowedDocument(int readerId, Document document) {
         Reader reader = findReaderById(readerId);
-        if ( ! documents.contains(document) ) {
-            throw  new DocumentNotFoundException("This document " + document.getTitle() + " does not exist in the library.Library");
-        }
+
+        ensureDocumentExists(document);
         document.returnDocument(reader);
     }
 
@@ -196,6 +194,14 @@ public class Library {
         return documents.stream()
                             .mapToInt(Document::getPublicationYear)
                             .max();
+    }
+
+
+
+    private void ensureDocumentExists(Document document) {
+        if ( ! documents.contains(document) ) {
+            throw  new DocumentNotFoundException("The document " + document.getTitle() + " does not exist in the library.");
+        }
     }
 
 }

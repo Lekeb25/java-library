@@ -9,9 +9,9 @@ public class Reader {
     private int id;
 
     public Reader( String firstName, String lastName, int id ) {
-        this.firstName= firstName;
-        this.lastName= lastName;
-        this.id= id;
+        this.firstName= Validation.requireText(firstName, "firstName");
+        this.lastName= Validation.requireText(lastName, "lastName");
+        this.id= Validation.requireAtLeast(id, 1, "id");
     }
 
     public void showReaderInfos() {
@@ -21,11 +21,11 @@ public class Reader {
     }
 
     public void setFirstName(String firstName) {
-        this.firstName = firstName;
+        this.firstName = Validation.requireText(firstName, "firstName");
     }
 
     public void setLastName( String lastName ) {
-        this.lastName = lastName;
+        this.lastName = Validation.requireText(lastName, "lastName");
     }
 
     public int getId() {
