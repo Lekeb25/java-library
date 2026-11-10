@@ -1,3 +1,5 @@
+package model;
+
 import java.util.Objects;
 
 public class Magazine extends Document {
@@ -7,8 +9,8 @@ public class Magazine extends Document {
 
     public Magazine(String title, int publicationYear, int numberOfCopies, int issueNumber, String publisher) {
         super(title, publicationYear, numberOfCopies);
-        this.issueNumber= issueNumber;
-        this.publisher= publisher;
+        this.issueNumber= Validation.requireAtLeast(issueNumber, 1, "issueNumber");
+        this.publisher= Validation.requireText(publisher, "publisher");
     }
 
     @Override
@@ -23,12 +25,17 @@ public class Magazine extends Document {
         return "Magazine";
     }
 
+    @Override
+    public String toFileLine() {
+        return getTitle() +  ";" + getPublicationYear() + ";" + getNumberOfCopies() + ";" + getIssueNumber() + ";" + getPublisher();
+    }
+
     public void setIssueNumber(int issueNumber) {
-        this.issueNumber= issueNumber;
+        this.issueNumber= Validation.requireAtLeast(issueNumber, 1, "issueNumber");
     }
 
     public void setPublisher(String publisher) {
-        this.publisher= publisher;
+        this.publisher= Validation.requireText(publisher, "publisher");
     }
 
     public int getIssueNumber() {

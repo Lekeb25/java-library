@@ -1,3 +1,5 @@
+package model;
+
 import java.util.Objects;
 
 public class Reader {
@@ -7,9 +9,9 @@ public class Reader {
     private int id;
 
     public Reader( String firstName, String lastName, int id ) {
-        this.firstName= firstName;
-        this.lastName= lastName;
-        this.id= id;
+        this.firstName= Validation.requireText(firstName, "firstName");
+        this.lastName= Validation.requireText(lastName, "lastName");
+        this.id= Validation.requireAtLeast(id, 1, "id");
     }
 
     public void showReaderInfos() {
@@ -19,11 +21,15 @@ public class Reader {
     }
 
     public void setFirstName(String firstName) {
-        this.firstName = firstName;
+        this.firstName = Validation.requireText(firstName, "firstName");
     }
 
     public void setLastName( String lastName ) {
-        this.lastName = lastName;
+        this.lastName = Validation.requireText(lastName, "lastName");
+    }
+
+    public int getId() {
+        return this.id;
     }
 
     public String getFirstName() {
@@ -32,6 +38,14 @@ public class Reader {
 
     public String getLastName() {
         return this.lastName;
+    }
+
+    public String getType() {
+        return "Reader";
+    }
+
+    public String toFileLine() {
+        return getFirstName() + ";" + getLastName() + ";" + getId();
     }
 
     @Override

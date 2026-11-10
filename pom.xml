@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- 1. Project identity (adapt for each project) -->
+    <groupId>com.javalibrary</groupId>
+    <artifactId>java-library</artifactId>
+    <version>1.0.0</version>
+    <packaging>jar</packaging>
+    <name>java-library</name>
+
+    <!-- 2. General settings -->
+    <properties>
+        <!-- Target Java version: must be less than or equal to the installed JDK version -->
+        <maven.compiler.release>17</maven.compiler.release>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <junit.version>5.13.4</junit.version>
+    </properties>
+
+    <!-- 3. Dependencies (one entry per external library) -->
+    <dependencies>
+        <!-- JUnit: only available in src/test, never packaged in the application JAR -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <!-- 4. Plugins (pin versions so the build is reproducible) -->
+    <build>
+        <plugins>
+
+            <!-- Runs the unit tests during the "test" phase -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.5.5</version>
+            </plugin>
+
+            <!-- Builds an executable JAR: remove this plugin if the project has no main class -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.4.2</version>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <!-- Fully qualified name of the class containing main() -->
+                            <mainClass>app.Main</mainClass>
+                        </manifest>
+                    </archive>
+                </configuration>
+            </plugin>
+
+        </plugins>
+    </build>
+</project>

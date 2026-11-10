@@ -1,8 +1,8 @@
-import java.util.ArrayList;
-import java.util.List;
+package model;
+
 import java.util.Objects;
 
-public class Book extends Document{
+public class Book extends Document {
 
     private String author;
 
@@ -10,7 +10,15 @@ public class Book extends Document{
 
     public Book( String title, String author,  int publicationYear, int numberOfCopies) {
        super(title, publicationYear, numberOfCopies);
-        this.author= author;
+        this.author= Validation.requireText(author, "author");
+    }
+
+    public void setAuthor(String author) {
+        this.author = Validation.requireText(author, "author");
+    }
+
+    public String getAuthor() {
+        return this.author;
     }
 
     @Override
@@ -24,14 +32,11 @@ public class Book extends Document{
         return  "Book";
     }
 
-
-    public void setAuthor(String author) {
-        this.author = author;
+    @Override
+    public String toFileLine() {
+        return getTitle() + ";" + getAuthor() + ";" + getPublicationYear() + ";" + getNumberOfCopies();
     }
 
-    public String getAuthor() {
-        return this.author;
-    }
 
 
     @Override
