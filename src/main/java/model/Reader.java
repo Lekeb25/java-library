@@ -1,3 +1,5 @@
+package model;
+
 import java.util.Objects;
 
 public class Reader {
@@ -26,12 +28,24 @@ public class Reader {
         this.lastName = lastName;
     }
 
+    public int getId() {
+        return this.id;
+    }
+
     public String getFirstName() {
         return this.firstName;
     }
 
     public String getLastName() {
         return this.lastName;
+    }
+
+    public String getType() {
+        return "Reader";
+    }
+
+    public String toFileLine() {
+        return getFirstName() + ";" + getLastName() + ";" + getId();
     }
 
     @Override

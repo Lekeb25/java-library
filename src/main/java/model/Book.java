@@ -1,8 +1,8 @@
-import java.util.ArrayList;
-import java.util.List;
+package model;
+
 import java.util.Objects;
 
-public class Book extends Document{
+public class Book extends Document {
 
     private String author;
 
@@ -22,6 +22,11 @@ public class Book extends Document{
     @Override
     public String getType() {
         return  "Book";
+    }
+
+    @Override
+    public String toFileLine() {
+        return getTitle() + ";" + getAuthor() + ";" + getPublicationYear() + ";" + getNumberOfCopies();
     }
 
 

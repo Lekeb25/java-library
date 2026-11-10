@@ -1,8 +1,14 @@
+package model;
+
+import exception.NoCopiesAvailableException;
+import exception.ReaderAlreadyBorrowedDocumentException;
+import exception.ReaderHasNotBorrowedDocumentException;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-public abstract class Document implements Borrowable {
+public abstract class Document implements Borrowable, Comparable<Document> {
     private String title;
     private int publicationYear;
     private int numberOfCopies;
@@ -54,24 +60,42 @@ public abstract class Document implements Borrowable {
         return this.numberOfCopies == this.getAvailableCopies();
     }
 
-    public abstract String getType();
+    public List<Reader> getBorrowedBy() {
+        return new ArrayList<Reader>(borrowedBy);
+    } 
 
+    public abstract String getType();
+    public abstract String toFileLine();
+
+    /* Comparable = one natural order (title, then year); Comparator = multiple external sorts. */
     @Override
-    public boolean borrow(Reader borrower) {
-        if (this.hasAlreadyBorrowed(borrower)) {
-            System.out.println("Already borrowed");
-            return false;
+    public int compareTo( Document other ) {
+        int byTitle = this.title.compareTo(other.title);
+        if ( byTitle != 0 ) {
+            return byTitle;
         }
-        if ( this.isAvailable()) {
-            borrowedBy.add(borrower);
-            return true;
-        }
-        return false;
+
+        return Integer.compare(this.publicationYear, other.publicationYear);
     }
 
     @Override
-    public boolean returnDocument(Reader borrower) {
-        return borrowedBy.remove(borrower);
+    public void borrow(Reader borrower) {
+        if (this.hasAlreadyBorrowed(borrower)) {
+            throw new ReaderAlreadyBorrowedDocumentException(borrower.getFirstName() + ", you has already borrowed this book");
+        }
+        if ( ! this.isAvailable()) {
+           throw  new NoCopiesAvailableException("All copies of the document " + this.getTitle() + " have been borrowed. Please check back later");
+        }
+        borrowedBy.add(borrower);
+    }
+
+    @Override
+    public void returnDocument(Reader borrower) {
+
+        if ( !borrowedBy.contains(borrower) ) {
+            throw new ReaderHasNotBorrowedDocumentException( borrower.getFirstName() + " has not borrowed this document");
+        }
+        borrowedBy.remove(borrower);
     }
 
     @Override
@@ -80,8 +104,28 @@ public abstract class Document implements Borrowable {
     }
 
     protected boolean hasAlreadyBorrowed(Reader borrower) {
+
+
         return borrowedBy.contains(borrower);
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj== null || getClass() != obj.getClass()) return false;
+
+        Document document = (Document) obj;
+        return publicationYear == document.publicationYear &&
+                Objects.equals(title, document.title);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(publicationYear, title);
+    }
+
+}
+
 
    /* public void borrow(Reader borrower) {
         if ( borrowedBy.contains(borrower) ) {
@@ -100,19 +144,3 @@ public abstract class Document implements Borrowable {
         return borrowedBy.remove(borrower);
     }*/
 
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (obj== null || getClass() != obj.getClass()) return false;
-
-        Document document = (Document) obj;
-        return publicationYear == document.publicationYear &&
-                Objects.equals(title, document.title);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(publicationYear, title);
-    }
-
-}

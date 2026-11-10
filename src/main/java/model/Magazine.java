@@ -1,3 +1,5 @@
+package model;
+
 import java.util.Objects;
 
 public class Magazine extends Document {
@@ -21,6 +23,11 @@ public class Magazine extends Document {
     @Override
     public String getType() {
         return "Magazine";
+    }
+
+    @Override
+    public String toFileLine() {
+        return getTitle() +  ";" + getPublicationYear() + ";" + getNumberOfCopies() + ";" + getIssueNumber() + ";" + getPublisher();
     }
 
     public void setIssueNumber(int issueNumber) {
