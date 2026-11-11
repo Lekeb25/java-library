@@ -288,8 +288,8 @@ public class Main {
     private static  void removeReader( Library library, int readerId) {
         try {
             library.removeReader(readerId);
-            System.out.println("OK: reader " +  readerId + " removed from the library");
-        } catch ( ReaderNotFoundException e) {
+            System.out.println("OK: reader " +  readerId + " removed from the library.");
+        } catch ( ReaderNotFoundException | ReaderCannotBeRemovedException e) {
             System.out.println("Error: " + e.getMessage());
         }
     }

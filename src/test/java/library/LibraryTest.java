@@ -169,6 +169,36 @@ public class LibraryTest {
         assertThrows(ReaderNotFoundException.class, () -> library.findReaderById(10));
     }
 
+    @Test
+    void removeReader_throwReaderCannotBeRemoved_whenReaderHasBorrowedDocuments() {
+
+        Book steppenwolf = new Book("Steppenwolf", "Herman Hesse", 1927, 4);
+        Reader kebodel = new Reader("Kebodel", "Bauer", 1);
+        library.addDocument(steppenwolf);
+        library.addReader(kebodel);
+        library.borrowDocument(1, steppenwolf);
+
+        ReaderCannotBeRemovedException exception = assertThrows(ReaderCannotBeRemovedException.class, () -> library.removeReader(1));
+
+        assertTrue(exception.getMessage().contains("Cannot remove reader " + kebodel.getId()));
+        assertNotNull(library.findReaderById(1));
+        assertTrue(steppenwolf.getBorrowedBy().contains(kebodel));
+    }
+
+    @Test
+    void removeReader_removesSuccessfully_whenReaderHasReturnedBorrowedDocument() {
+        Book steppenwolf = new Book("Steppenwolf", "Herman Hesse", 1927, 4);
+        Reader kebodel = new Reader("Kebodel", "Bauer", 1);
+        library.addDocument(steppenwolf);
+        library.addReader(kebodel);
+        library.borrowDocument(1, steppenwolf);
+
+        library.returnBorrowedDocument(1, steppenwolf);
+
+        assertDoesNotThrow( () -> library.removeReader(1) );
+        assertThrows(ReaderNotFoundException.class, () -> library.findReaderById(1));
+    }
+
 
     /* Borrow and return documents */
 
