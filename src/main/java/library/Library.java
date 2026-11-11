@@ -110,10 +110,15 @@ public class Library {
     }
 
     public void removeReader(int readerId) {
-        Reader removed = readers.remove(readerId);
-        if ( removed == null ) {
-            throw new ReaderNotFoundException("No reader found with id " + readerId + " in the library.");
+        Reader reader = this.findReaderById(readerId);
+
+        boolean hasBorrowedDocuments = documents.stream().anyMatch( document -> document.getBorrowedBy().contains(reader));
+
+        if (hasBorrowedDocuments) {
+            throw  new ReaderCannotBeRemovedException("Cannot remove reader " + reader.getId() + ": all borrowed documents must be returned first.");
         }
+
+       readers.remove(readerId);
     }
 
     public void borrowDocument( int readerId, Document document ) {
