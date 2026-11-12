@@ -102,6 +102,39 @@ public class LibraryFileStorageTest {
     }
 
     @Test
+    void save_writesExpectedLines_whenLibraryIsFilled() throws IOException {
+        fillLibrary();
+
+        storage.save(library);
+        List<String> lines = Files.readAllLines(savePath);
+
+        assertEquals(7, lines.size());
+
+        String readerNabi = READER + SEPARATOR + "Nabi" + SEPARATOR + "Kenne" + SEPARATOR + "1";
+        String readerKebodel = READER + SEPARATOR + "Kebodel" + SEPARATOR +  "Bauer" + SEPARATOR + "2";
+        List<String> line12 = lines.subList(0,2);
+        assertTrue(line12.contains(readerNabi));
+        assertTrue(line12.contains(readerKebodel));
+
+
+        String bookDune = BOOK + SEPARATOR + "Dune" + SEPARATOR + "Frank Herbert" + SEPARATOR + "1965" + SEPARATOR + "3";
+        String borrowDune = BORROW + SEPARATOR + "Dune" + SEPARATOR + "1965" + SEPARATOR + "1";
+        String magazineNatGeo = MAGAZINE + SEPARATOR + "National Geographic" + SEPARATOR + "2024" + SEPARATOR + "2" + SEPARATOR + "245" + SEPARATOR + "NatGeo Society";
+        String borrowNatGeo1 = BORROW + SEPARATOR + "National Geographic" + SEPARATOR + "2024" + SEPARATOR + "1";
+        String borrowNatGeo2 = BORROW + SEPARATOR + "National Geographic" + SEPARATOR + "2024" + SEPARATOR + "2";
+        List<String> expectedDocumentLines = List.of(
+                bookDune,
+                borrowDune,
+                magazineNatGeo,
+                borrowNatGeo1,
+                borrowNatGeo2
+        );
+
+        assertEquals(expectedDocumentLines, lines.subList(2, 7));
+
+    }
+
+    @Test
     void load_doesNothing_whenFileDoesNotExist() {
         assertDoesNotThrow(() -> storage.load(library));
         assertTrue(library.getDocuments().isEmpty());
@@ -215,36 +248,4 @@ public class LibraryFileStorageTest {
         assertTrue(exception.getMessage().contains("line 4"));
     }
 
-    @Test
-    void save_writesExpectedLines_whenLibraryIsFilled() throws IOException {
-        fillLibrary();
-
-        storage.save(library);
-        List<String> lines = Files.readAllLines(savePath);
-
-        assertEquals(7, lines.size());
-
-        String readerNabi = READER + SEPARATOR + "Nabi" + SEPARATOR + "Kenne" + SEPARATOR + "1";
-        String readerKebodel = READER + SEPARATOR + "Kebodel" + SEPARATOR +  "Bauer" + SEPARATOR + "2";
-        List<String> line12 = lines.subList(0,2);
-        assertTrue(line12.contains(readerNabi));
-        assertTrue(line12.contains(readerKebodel));
-
-
-        String bookDune = BOOK + SEPARATOR + "Dune" + SEPARATOR + "Frank Herbert" + SEPARATOR + "1965" + SEPARATOR + "3";
-        String borrowDune = BORROW + SEPARATOR + "Dune" + SEPARATOR + "1965" + SEPARATOR + "1";
-        String magazineNatGeo = MAGAZINE + SEPARATOR + "National Geographic" + SEPARATOR + "2024" + SEPARATOR + "2" + SEPARATOR + "245" + SEPARATOR + "NatGeo Society";
-        String borrowNatGeo1 = BORROW + SEPARATOR + "National Geographic" + SEPARATOR + "2024" + SEPARATOR + "1";
-        String borrowNatGeo2 = BORROW + SEPARATOR + "National Geographic" + SEPARATOR + "2024" + SEPARATOR + "2";
-        List<String> expectedDocumentLines = List.of(
-                bookDune,
-                borrowDune,
-                magazineNatGeo,
-                borrowNatGeo1,
-                borrowNatGeo2
-        );
-
-        assertEquals(expectedDocumentLines, lines.subList(2, 7));
-
-    }
 }

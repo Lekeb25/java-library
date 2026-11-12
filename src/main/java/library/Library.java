@@ -22,18 +22,24 @@ public class Library {
         return new ArrayList<>(readers.values());
     }
 
-    public void addDocument(Document document ) {
-        if (documents.contains(document) ) {
-            throw new DocumentAlreadyExistsException("The document " + document.getTitle() + " already exists in the library.");
-        }
-        documents.add(document);
-    }
-
+    // ------------------------------------ Behavior -------------------------------------
     public void addReader( Reader reader ) {
         if (readers.containsKey(reader.getId())) {
             throw new ReaderAlreadyExistsException("A reader with id " + reader.getId() + " is already registered in the library.");
         }
         readers.put(reader.getId(), reader);
+    }
+
+    public void removeReader(int readerId) {
+        Reader reader = this.findReaderById(readerId);
+
+        boolean hasBorrowedDocuments = documents.stream().anyMatch( document -> document.getBorrowedBy().contains(reader));
+
+        if (hasBorrowedDocuments) {
+            throw  new ReaderCannotBeRemovedException("Cannot remove reader " + reader.getId() + ": all borrowed documents must be returned first.");
+        }
+
+        readers.remove(readerId);
     }
 
     public Reader findReaderById(int readerId) {
@@ -44,18 +50,28 @@ public class Library {
         return reader;
     }
 
+
+    public void addDocument(Document document ) {
+        if (documents.contains(document) ) {
+            throw new DocumentAlreadyExistsException("The document " + document.getTitle() + " already exists in the library.");
+        }
+        documents.add(document);
+    }
+
+    public void removeDocument(Document document) {
+        if ( ! document.hasAllCopiesAvailable()) {
+            throw new DocumentCannotBeRemovedException("Cannot remove '" + document.getTitle() + "': all borrowed copies must be returned first.");
+        }
+        if (! documents.remove(document)) {
+            throw  new DocumentNotFoundException("The document " + document.getTitle() + " does not exist in the library.");
+        }
+    }
+
     public List<Document> searchDocuments(Predicate<Document> criteria) {
 
         return documents.stream()
                 .filter(criteria)
                 .toList();
-    }
-
-    public Optional<Document> findFirstDocument( Predicate<Document> criteria ) {
-
-        return documents.stream()
-                .filter(criteria)
-                .findFirst();
     }
 
     public Document searchDocument(Document document) {
@@ -65,6 +81,29 @@ public class Library {
             }
         }
         throw new DocumentNotFoundException("The document " + document.getTitle() + " does not exist in the library.");
+    }
+
+
+    public void borrowDocument( int readerId, Document document ) {
+        Reader reader = findReaderById(readerId);
+
+        ensureDocumentExists(document);
+        document.borrow(reader);
+    }
+
+    public void returnBorrowedDocument(int readerId, Document document) {
+        Reader reader = findReaderById(readerId);
+
+        ensureDocumentExists(document);
+        document.returnDocument(reader);
+    }
+
+
+    public Optional<Document> findFirstDocument( Predicate<Document> criteria ) {
+
+        return documents.stream()
+                .filter(criteria)
+                .findFirst();
     }
 
     public Document findDocumentByTitleAndYear ( String title, int publicationYear) {
@@ -86,6 +125,7 @@ public class Library {
         }*/
     }
 
+
     public List<Document> getDocumentsSorted() {
         List<Document> sortedDocuments = new ArrayList<>(documents);
 
@@ -98,41 +138,6 @@ public class Library {
 
         sorted.sort(comparator);
         return sorted;
-    }
-
-    public void removeDocument(Document document) {
-        if ( ! document.hasAllCopiesAvailable()) {
-            throw new DocumentCannotBeRemovedException("Cannot remove '" + document.getTitle() + "': all borrowed copies must be returned first.");
-        }
-        if (! documents.remove(document)) {
-            throw  new DocumentNotFoundException("The document " + document.getTitle() + " does not exist in the library.");
-        }
-    }
-
-    public void removeReader(int readerId) {
-        Reader reader = this.findReaderById(readerId);
-
-        boolean hasBorrowedDocuments = documents.stream().anyMatch( document -> document.getBorrowedBy().contains(reader));
-
-        if (hasBorrowedDocuments) {
-            throw  new ReaderCannotBeRemovedException("Cannot remove reader " + reader.getId() + ": all borrowed documents must be returned first.");
-        }
-
-       readers.remove(readerId);
-    }
-
-    public void borrowDocument( int readerId, Document document ) {
-        Reader reader = findReaderById(readerId);
-
-        ensureDocumentExists(document);
-        document.borrow(reader);
-    }
-
-    public void returnBorrowedDocument(int readerId, Document document) {
-        Reader reader = findReaderById(readerId);
-
-        ensureDocumentExists(document);
-        document.returnDocument(reader);
     }
 
     public List<Book> getBooks() {
@@ -163,15 +168,6 @@ public class Library {
                             .toList();
     }
 
-    public int getTotalCopies() {
-        return documents.stream()
-                            .mapToInt(Document::getNumberOfCopies)
-                            .sum();
-    }
-
-    public int countDocuments() {
-        return documents.size();
-    }
 
     public boolean hasAvailableDocument() {
         return documents.stream()
@@ -183,10 +179,21 @@ public class Library {
                 .allMatch(Document::isAvailable);
     }
 
+
+    public int countDocuments() {
+        return documents.size();
+    }
+
     public long countAvailableDocuments() {
         return documents.stream()
                 .filter( Document::isAvailable)
                 .count();
+    }
+
+    public int getTotalCopies() {
+        return documents.stream()
+                .mapToInt(Document::getNumberOfCopies)
+                .sum();
     }
 
     public OptionalInt getOldestPublicationYear() {
@@ -202,7 +209,7 @@ public class Library {
     }
 
 
-
+    // -------------------------------------- Private helpers ------------------------------------
     private void ensureDocumentExists(Document document) {
         if ( ! documents.contains(document) ) {
             throw  new DocumentNotFoundException("The document " + document.getTitle() + " does not exist in the library.");
