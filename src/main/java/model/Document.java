@@ -20,14 +20,6 @@ public abstract class Document implements Borrowable, Comparable<Document> {
         this.numberOfCopies= Validation.requireAtLeast(numberOfCopies, 1, "numberOfCopies");
     }
 
-    public void showDocumentInfos() {
-        System.out.println("Title  :  " + title);
-        System.out.println("Publication year  :  " + publicationYear);
-        System.out.println("Number of copies : " + numberOfCopies);
-        System.out.println("Borrowed by : " );
-        borrowedBy.forEach(reader -> System.out.println("\t" + reader.getFirstName() + "  " + reader.getLastName()) );
-    }
-
     public void setTitle(String title) {
         this.title = Validation.requireText(title, "title");
     }
@@ -52,6 +44,7 @@ public abstract class Document implements Borrowable, Comparable<Document> {
         return this.numberOfCopies;
     }
 
+    // ------------------------------- Behavior ----------------------------
     public int getAvailableCopies() {
         return this.numberOfCopies - borrowedBy.size();
     }
@@ -62,29 +55,28 @@ public abstract class Document implements Borrowable, Comparable<Document> {
 
     public List<Reader> getBorrowedBy() {
         return new ArrayList<Reader>(borrowedBy);
-    } 
+    }
 
+    public void showDocumentInfos() {
+        System.out.println("Title  :  " + title);
+        System.out.println("Publication year  :  " + publicationYear);
+        System.out.println("Number of copies : " + numberOfCopies);
+        System.out.println("Borrowed by : " );
+        borrowedBy.forEach(reader -> System.out.println("\t" + reader.getFirstName() + "  " + reader.getLastName()) );
+    }
+
+    // ------------------------------ Abstract methods -------------------
     public abstract String getType();
     public abstract String toFileLine();
 
-    /* Comparable = one natural order (title, then year); Comparator = multiple external sorts. */
-    @Override
-    public int compareTo( Document other ) {
-        int byTitle = this.title.compareTo(other.title);
-        if ( byTitle != 0 ) {
-            return byTitle;
-        }
-
-        return Integer.compare(this.publicationYear, other.publicationYear);
-    }
-
+    // ------------------------------- Overrides --------------------------
     @Override
     public void borrow(Reader borrower) {
         if (this.hasAlreadyBorrowed(borrower)) {
             throw new ReaderAlreadyBorrowedDocumentException("Reader " +  borrower.getFirstName() + " has already borrowed the document '" + this.getTitle() + "'." );
         }
         if ( ! this.isAvailable()) {
-           throw  new NoCopiesAvailableException("All copies of the document " + this.getTitle() + " have been borrowed. Please check back later");
+            throw  new NoCopiesAvailableException("All copies of the document " + this.getTitle() + " have been borrowed. Please check back later");
         }
         borrowedBy.add(borrower);
     }
@@ -103,10 +95,15 @@ public abstract class Document implements Borrowable, Comparable<Document> {
         return this.getAvailableCopies() > 0;
     }
 
-    protected boolean hasAlreadyBorrowed(Reader borrower) {
+    /* Comparable = one natural order (title, then year); Comparator = multiple external sorts. */
+    @Override
+    public int compareTo( Document other ) {
+        int byTitle = this.title.compareTo(other.title);
+        if ( byTitle != 0 ) {
+            return byTitle;
+        }
 
-
-        return borrowedBy.contains(borrower);
+        return Integer.compare(this.publicationYear, other.publicationYear);
     }
 
     @Override
@@ -122,6 +119,11 @@ public abstract class Document implements Borrowable, Comparable<Document> {
     @Override
     public int hashCode() {
         return Objects.hash(publicationYear, title);
+    }
+
+    // ---------------------------------- Helpers or  Private methods ------------------------
+    protected boolean hasAlreadyBorrowed(Reader borrower) {
+        return borrowedBy.contains(borrower);
     }
 
 }

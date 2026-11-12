@@ -61,8 +61,86 @@ public class LibraryTest {
         library = new Library();
     }
 
-    /* Document Tests */
 
+    /* Reader Tests */
+    @Test
+    void addReader_throwsReaderAlreadyExists_whenAddReaderWithSameId() {
+        Reader nabi = new Reader("Nabi", "Watto", 1);
+        Reader kebodel = new Reader("Kebodel", "Bauer", 1);
+
+        library.addReader(nabi);
+
+        assertThrows(ReaderAlreadyExistsException.class, () -> library.addReader(kebodel));
+    }
+
+    @Test
+    void findReaderById_getAReader_whenReaderIsAddToLibrary() {
+        Reader nabi = new Reader("Nabi", "Watto", 1);
+        library.addReader(nabi);
+
+        assertEquals(nabi, library.findReaderById(1));
+    }
+
+    @Test
+    void findReaderById_throwsReaderNotFound_whenReaderIsRemoved() {
+        Reader nabi = new Reader("Nabi", "Watto", 1);
+        Reader kebodel = new Reader("Kebodel", "Bauer", 2);
+        library.addReader(nabi);
+        library.addReader(kebodel);
+
+        library.removeReader(1);
+
+        assertThrows(ReaderNotFoundException.class, () -> library.findReaderById(1));
+    }
+
+    @Test
+    void findReaderById_throwsReaderNotFound_whenReaderIdNotExists() {
+        Reader kebodel = new Reader("Kebodel", "Bauer", 2);
+        library.addReader(kebodel);
+
+        assertThrows(ReaderNotFoundException.class, () -> library.findReaderById(10));
+    }
+
+    @Test
+    void removeReader_throwsReaderNotFound_whenReaderNotExists() {
+        Reader kebodel = new Reader("Kebodel", "Bauer", 2);
+        library.addReader(kebodel);
+
+        assertThrows(ReaderNotFoundException.class, () -> library.removeReader(1));
+    }
+
+    @Test
+    void removeReader_throwReaderCannotBeRemoved_whenReaderHasBorrowedDocuments() {
+
+        Book steppenwolf = new Book("Steppenwolf", "Herman Hesse", 1927, 4);
+        Reader kebodel = new Reader("Kebodel", "Bauer", 1);
+        library.addDocument(steppenwolf);
+        library.addReader(kebodel);
+        library.borrowDocument(1, steppenwolf);
+
+        ReaderCannotBeRemovedException exception = assertThrows(ReaderCannotBeRemovedException.class, () -> library.removeReader(1));
+
+        assertTrue(exception.getMessage().contains("Cannot remove reader " + kebodel.getId()));
+        assertNotNull(library.findReaderById(1));
+        assertTrue(steppenwolf.getBorrowedBy().contains(kebodel));
+    }
+
+    @Test
+    void removeReader_removesSuccessfully_whenReaderHasReturnedBorrowedDocument() {
+        Book steppenwolf = new Book("Steppenwolf", "Herman Hesse", 1927, 4);
+        Reader kebodel = new Reader("Kebodel", "Bauer", 1);
+        library.addDocument(steppenwolf);
+        library.addReader(kebodel);
+        library.borrowDocument(1, steppenwolf);
+
+        library.returnBorrowedDocument(1, steppenwolf);
+
+        assertDoesNotThrow( () -> library.removeReader(1) );
+        assertThrows(ReaderNotFoundException.class, () -> library.findReaderById(1));
+    }
+
+
+    /* Document Tests */
     @Test
     void addDocument_addsDocumentToLibrary_whenLibraryIsEmpty() {
         Book erenVeyr= new Book("Le Second Role Devore Le Monde", "Dimi_Noups", 2026, 1);
@@ -121,87 +199,8 @@ public class LibraryTest {
     }
 
 
-    /* Reader Tests */
-
-    @Test
-    void findReaderById_getAReader_whenReaderIsAddToLibrary() {
-        Reader nabi = new Reader("Nabi", "Watto", 1);
-        library.addReader(nabi);
-
-        assertEquals(nabi, library.findReaderById(1));
-    }
-
-    @Test
-    void addReader_throwsReaderAlreadyExists_whenAddReaderWithSameId() {
-        Reader nabi = new Reader("Nabi", "Watto", 1);
-        Reader kebodel = new Reader("Kebodel", "Bauer", 1);
-
-        library.addReader(nabi);
-
-        assertThrows(ReaderAlreadyExistsException.class, () -> library.addReader(kebodel));
-    }
-
-    @Test
-    void findReaderById_throwsReaderNotFound_whenReaderIsRemoved() {
-        Reader nabi = new Reader("Nabi", "Watto", 1);
-        Reader kebodel = new Reader("Kebodel", "Bauer", 2);
-        library.addReader(nabi);
-        library.addReader(kebodel);
-
-        library.removeReader(1);
-
-        assertThrows(ReaderNotFoundException.class, () -> library.findReaderById(1));
-    }
-
-    @Test
-    void removeReader_throwsReaderNotFound_whenReaderNotExists() {
-        Reader kebodel = new Reader("Kebodel", "Bauer", 2);
-        library.addReader(kebodel);
-
-        assertThrows(ReaderNotFoundException.class, () -> library.removeReader(1));
-    }
-
-    @Test
-    void findReaderById_throwsReaderNotFound_whenReaderIdNotExists() {
-        Reader kebodel = new Reader("Kebodel", "Bauer", 2);
-        library.addReader(kebodel);
-
-        assertThrows(ReaderNotFoundException.class, () -> library.findReaderById(10));
-    }
-
-    @Test
-    void removeReader_throwReaderCannotBeRemoved_whenReaderHasBorrowedDocuments() {
-
-        Book steppenwolf = new Book("Steppenwolf", "Herman Hesse", 1927, 4);
-        Reader kebodel = new Reader("Kebodel", "Bauer", 1);
-        library.addDocument(steppenwolf);
-        library.addReader(kebodel);
-        library.borrowDocument(1, steppenwolf);
-
-        ReaderCannotBeRemovedException exception = assertThrows(ReaderCannotBeRemovedException.class, () -> library.removeReader(1));
-
-        assertTrue(exception.getMessage().contains("Cannot remove reader " + kebodel.getId()));
-        assertNotNull(library.findReaderById(1));
-        assertTrue(steppenwolf.getBorrowedBy().contains(kebodel));
-    }
-
-    @Test
-    void removeReader_removesSuccessfully_whenReaderHasReturnedBorrowedDocument() {
-        Book steppenwolf = new Book("Steppenwolf", "Herman Hesse", 1927, 4);
-        Reader kebodel = new Reader("Kebodel", "Bauer", 1);
-        library.addDocument(steppenwolf);
-        library.addReader(kebodel);
-        library.borrowDocument(1, steppenwolf);
-
-        library.returnBorrowedDocument(1, steppenwolf);
-
-        assertDoesNotThrow( () -> library.removeReader(1) );
-        assertThrows(ReaderNotFoundException.class, () -> library.findReaderById(1));
-    }
-
 
     /* Borrow and return documents */
-
     @Test
     void borrowDocument_borrowSuccessfully_whenDocumentIsAvailableAndReaderExists() {
         Reader nabi = new Reader("Nabi", "Watto", 1);
@@ -274,6 +273,20 @@ public class LibraryTest {
     }
 
     @Test
+    void borrowDocument_borrowSuccessfully_whenLastAvailableCopyAreReturn() {
+        fillLibrary();
+        Reader berenice = new Reader("Berenice", "Pamap", 4);
+        library.addReader(berenice);
+        Document crimeAndPunishment = library.findDocumentByTitleAndYear("Crime and Punishment", 1867);
+
+        library.returnBorrowedDocument(1, crimeAndPunishment);
+        library.borrowDocument(4, crimeAndPunishment);
+
+        assertTrue(crimeAndPunishment.getBorrowedBy().contains(berenice));
+
+    }
+
+    @Test
     void returnBorrowedDocument_returnSuccessfully_whenReaderHaveBorrowedThisDocument() {
         Reader nabi = new Reader("Nabi", "Watto", 1);
         Book annaKarenina= new Book("Anna Karenina", "Leo Tolstoy", 1878, 2);
@@ -295,24 +308,8 @@ public class LibraryTest {
         assertThrows(ReaderHasNotBorrowedDocumentException.class, () -> library.returnBorrowedDocument(1, steppenwolf ));
     }
 
-    @Test
-    void borrowDocument_borrowSuccessfully_whenLastAvailableCopyAreReturn() {
-        fillLibrary();
-        Reader berenice = new Reader("Berenice", "Pamap", 4);
-        library.addReader(berenice);
-        Document crimeAndPunishment = library.findDocumentByTitleAndYear("Crime and Punishment", 1867);
-
-        library.returnBorrowedDocument(1, crimeAndPunishment);
-        library.borrowDocument(4, crimeAndPunishment);
-
-        assertTrue(crimeAndPunishment.getBorrowedBy().contains(berenice));
-
-    }
-
-
 
     /* Searching and sorting in library */
-
     @Test
     void searchDocuments_returnsMatchingDocuments_whenPublishedYearMatches() {
         fillLibrary();
@@ -470,8 +467,22 @@ public class LibraryTest {
     }
 
 
-
     /* Filter, Transform, • Aggregate */
+    @Test
+    void getTotalCopies_returnsTotalNumberOfCopies() {
+        fillLibrary();
+
+        int numberOfCopies = library.getTotalCopies();
+
+        assertEquals(TOTAL_COPIES, numberOfCopies);
+    }
+
+    @Test
+    void getTotalCopies_returnsZero_whenLibraryIsEmpty() {
+        int numberOfCopies = library.getTotalCopies();
+
+        assertEquals(0, numberOfCopies);
+    }
 
     @Test
     void countDocuments_returnsNumberOfDocument() {
@@ -487,22 +498,6 @@ public class LibraryTest {
         int numberOfDocuments = library.countDocuments();
 
         assertEquals(0, numberOfDocuments);
-    }
-
-    @Test
-    void getTotalCopies_returnsTotalNumberOfCopies() {
-        fillLibrary();
-
-        int numberOfCopies = library.getTotalCopies();
-
-        assertEquals(TOTAL_COPIES, numberOfCopies);
-    }
-
-    @Test
-    void getTotalCopies_returnsZero_whenLibraryIsEmpty() {
-        int numberOfCopies = library.getTotalCopies();
-
-        assertEquals(0, numberOfCopies);
     }
 
     @Test

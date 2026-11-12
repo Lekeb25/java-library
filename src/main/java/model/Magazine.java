@@ -13,6 +13,22 @@ public class Magazine extends Document {
         this.publisher= Validation.requireText(publisher, "publisher");
     }
 
+    public void setIssueNumber(int issueNumber) {
+        this.issueNumber= Validation.requireAtLeast(issueNumber, 1, "issueNumber");
+    }
+
+    public void setPublisher(String publisher) {
+        this.publisher= Validation.requireText(publisher, "publisher");
+    }
+
+    public int getIssueNumber() {
+        return this.issueNumber;
+    }
+
+    public String getPublisher() {
+        return publisher;
+    }
+
     @Override
     public void showDocumentInfos() {
         super.showDocumentInfos();
@@ -28,22 +44,6 @@ public class Magazine extends Document {
     @Override
     public String toFileLine() {
         return getTitle() +  ";" + getPublicationYear() + ";" + getNumberOfCopies() + ";" + getIssueNumber() + ";" + getPublisher();
-    }
-
-    public void setIssueNumber(int issueNumber) {
-        this.issueNumber= Validation.requireAtLeast(issueNumber, 1, "issueNumber");
-    }
-
-    public void setPublisher(String publisher) {
-        this.publisher= Validation.requireText(publisher, "publisher");
-    }
-
-    public int getIssueNumber() {
-        return this.issueNumber;
-    }
-
-    public String getPublisher() {
-        return publisher;
     }
 
     @Override

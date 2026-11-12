@@ -14,12 +14,6 @@ public class Reader {
         this.id= Validation.requireAtLeast(id, 1, "id");
     }
 
-    public void showReaderInfos() {
-        System.out.println("ID  :  " + id);
-        System.out.println("First Name  :  " + firstName);
-        System.out.println("Last Name  :  " + lastName);
-    }
-
     public void setFirstName(String firstName) {
         this.firstName = Validation.requireText(firstName, "firstName");
     }
@@ -46,6 +40,12 @@ public class Reader {
 
     public String toFileLine() {
         return getFirstName() + ";" + getLastName() + ";" + getId();
+    }
+
+    public void showReaderInfos() {
+        System.out.println("ID  :  " + id);
+        System.out.println("First Name  :  " + firstName);
+        System.out.println("Last Name  :  " + lastName);
     }
 
     @Override
